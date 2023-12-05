@@ -31,7 +31,6 @@ def expand_range(begin, length, stage_id):
     for mapping in stages[stage_id]:
         o = overlap(begin, length, mapping.src, mapping.length)
         if o:
-            have_overlap = True
             overlap_begin, overlap_length = o
             overlap_begin += mapping.dst - mapping.src
             matches.append(expand_range(overlap_begin, overlap_length, stage_id + 1))
