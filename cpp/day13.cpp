@@ -5,12 +5,9 @@
 
 int main()
 {
-    auto const begin = std::chrono::high_resolution_clock::now();
     std::string line;
     std::vector<uint32_t> rows;
-    rows.reserve(32);
     std::vector<uint32_t> cols;
-    cols.reserve(32);
     uint32_t p1{};
     uint32_t p2{};
     while (!std::cin.eof()) {
@@ -47,5 +44,4 @@ int main()
     std::cout << p1 << std::endl;
     std::cout << p2 << std::endl;
     auto const end = std::chrono::high_resolution_clock::now();
-    std::cout << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << " µs" << std::endl;
 }
