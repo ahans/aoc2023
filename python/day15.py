@@ -1,22 +1,15 @@
 from collections import namedtuple
+from functools import reduce
 import sys
 
 
 seqs = sys.stdin.readline().strip().split(",")
 
 
-def hash(seq):
-    v = 0
-    for c in seq:
-        v = ((v + ord(c)) * 17) % 256
-    return v
+hash = lambda seq: reduce(lambda v, c: (v + ord(c)) * 17 % 256, seq, 0)
 
 
-p1 = 0
-for ins in seqs:
-    h = hash(ins)
-    p1 += h
-print(p1)
+print(sum(hash(x) for x in seqs))
 
 Box = namedtuple("Box", "labels focal_lengths")
 boxes = [Box([], []) for _ in range(256)]
@@ -26,8 +19,8 @@ for ins in seqs:
         box = boxes[hash(cur_label)]
         try:
             i = box.labels.index(cur_label)
-            box.labels.pop(i)
-            box.focal_lengths.pop(i)
+            box.labels.remove(i)
+            box.focal_lengths.remove(i)
         except ValueError:
             pass
     else:
