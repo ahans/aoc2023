@@ -2,7 +2,6 @@ import sys
 from collections import defaultdict
 import time
 
-begin = time.time()
 
 rules_lines, parts_lines = sys.stdin.read().strip().split("\n\n")
 
@@ -12,7 +11,7 @@ for line in rules_lines.splitlines():
     rest = rest[:-1].split(",")
     conditions = []
     for c in rest:
-        if ':' in c:
+        if ":" in c:
             cond, target = c.split(":")
             if "<" in cond:
                 cond = ["<"] + cond.split("<")
@@ -47,6 +46,8 @@ def is_accepted(vars):
     return workflow == "A"
 
 
+begin = time.time()
+
 p1 = 0
 for line in parts_lines.splitlines():
     vars = {}
@@ -66,6 +67,7 @@ for name, steps in rules.items():
         rule_map[target].add(name)
 rule_map["in"] = [None]
 
+
 def solve(dst_rule, src_rule, vars):
     if dst_rule is None:
         return [vars]
@@ -74,7 +76,6 @@ def solve(dst_rule, src_rule, vars):
     r = []
     for i, (_, dst) in enumerate(rule):
         if dst == src_rule:
-
             my_vars = vars.copy()
             matching_cond = rule[i]
             if matching_cond[0] is not None:
@@ -83,18 +84,15 @@ def solve(dst_rule, src_rule, vars):
                     my_vars[v] = (my_vars[v][0], min(n - 1, my_vars[v][1]))
                 elif rel == ">":
                     my_vars[v] = (max(my_vars[v][0], n + 1), my_vars[v][1])
-                else:
-                    assert False
+
             # apply non-matching previous rules negated
             for cond, _ in rule[:i]:
                 assert cond is not None
                 rel, v, n = cond
-                if rel == "<": # >=
+                if rel == "<":  # >=
                     my_vars[v] = (max(my_vars[v][0], n), my_vars[v][1])
-                elif rel == ">": # <=
+                elif rel == ">":  # <=
                     my_vars[v] = (my_vars[v][0], min(n, my_vars[v][1]))
-                else:
-                    assert False
 
             for src in rule_map[dst_rule]:
                 for s in solve(src, dst_rule, my_vars.copy()):
@@ -104,7 +102,7 @@ def solve(dst_rule, src_rule, vars):
 
 p2 = 0
 for rule in rule_map["A"]:
-    a = solve(rule, "A", {"x" : (1,4000), "m": (1,4000), "a": (1,4000), "s": (1,4000)})
+    a = solve(rule, "A", {"x": (1, 4000), "m": (1, 4000), "a": (1, 4000), "s": (1, 4000)})
     for r in a:
         s = 1
         for v, (_min, _max) in r.items():
