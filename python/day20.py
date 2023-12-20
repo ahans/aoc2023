@@ -1,11 +1,11 @@
 import sys
-import math
 
+lines = sys.stdin.read().strip().splitlines()
 broadcasts_to = None
 from_to = {}
 orig_names = {}
 types = {}
-for line in sys.stdin.read().strip().splitlines():
+for line in lines:
     lhs, rhs = line.split(" -> ")
     dsts = rhs.split(", ")
     if lhs == "broadcaster":
@@ -30,29 +30,10 @@ for name, t in types.items():
                 sources.add(src)
         states[name] = {src: False for src in sources}
 
-# with open("graph.dot", "wt") as f:
-#     f.write("digraph prog {\n")
-#     for name, orig_name in orig_names.items():
-#         f.write(f"{name} [label=" + '"' + orig_name + '"' "]")
-#     for src, dsts in from_to.items():
-#         for dst in dsts:
-#             f.write(f"  {src} -> {dst};\n")
-#     f.write("}\n")
-
-# sys.exit(0)
 
 low_count = 0
 high_count = 0
-push_no = 0
-max_num_true = 0
-jc_values = {}
-conj_all_true = {}
-while True:
-    push_no += 1
-
-    if push_no == 1000:
-        print(low_count * high_count)
-
+for _ in range(1000):
     low_count += 1
 
     q = []
@@ -61,13 +42,6 @@ while True:
         low_count += 1
 
     while q:
-        for conj in ["jc", "fj", "vm", "qq"]:
-            if all(states[conj].values()) and conj not in conj_all_true:
-                conj_all_true[conj] = push_no
-        if len(conj_all_true) == 4:
-            print(conj_all_true.values())
-            print(math.prod(conj_all_true.values()))
-            sys.exit(0)
         name, src, pulse = q.pop(0)
         if name not in types:
             continue
@@ -89,3 +63,28 @@ while True:
                 high_count += len(from_to[name])
             else:
                 low_count += len(from_to[name])
+
+print(low_count * high_count)
+
+labels = {}
+for line in lines:
+    label, _ = line.split(" -> ")
+    labels[label[1:]] = label
+
+graph = {}
+for line in lines:
+    src, dsts = line.split(" -> ")
+    dsts = dsts.split(", ")
+    graph[src] = [(labels[dst] if dst in labels else dst) for dst in dsts]
+
+p2 = 1
+for ff in graph["broadcaster"]:
+    b = ""
+    while True:
+        b += "1" if any(dst.startswith("&") for dst in graph[ff]) else "0"
+        next_ff = [dst for dst in graph[ff] if dst.startswith("%")]
+        if not next_ff:
+            break
+        ff = next_ff[0]
+    p2 *= int("".join(reversed(b)), 2)
+print(p2)
