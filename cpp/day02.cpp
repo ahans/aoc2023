@@ -1,4 +1,5 @@
 #include <fstream>
+#include <chrono>
 
 template <int max_size>
 class InputBuffer {
@@ -62,6 +63,7 @@ struct Rgb {
 };
 
 int main() {
+    auto begin = std::chrono::high_resolution_clock::now();
     InputBuffer<16384> buffer("../inputs/02.txt");
     int i = 0;
     int id = 1;
@@ -115,4 +117,7 @@ int main() {
 
     printf("p1: %d\n", p1);
     printf("p2: %d\n", p2);
+
+    auto const end = std::chrono::high_resolution_clock::now();
+    printf("%lld\n", (end - begin).count());
 }
