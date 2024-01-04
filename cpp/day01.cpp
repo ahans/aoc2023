@@ -1,113 +1,70 @@
+#include <algorithm>
 #include <array>
 #include <chrono>
 #include <cstdint>
 #include <fstream>
 #include <iostream>
+#include <ranges>
 #include <string_view>
 #include <string>
 #include <vector>
 
-class Input
-{
-public:
-    Input(std::string const& input_file)
-    {
-        std::ifstream file{input_file};
-        buf_ = std::string{std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()};
-        buf_view_ = static_cast<std::string_view>(buf_);
-    }
-
-    std::vector<std::string_view> splitlines() const
-    {
-        std::vector<std::string_view> lines;
-        lines.reserve(1000);
-        size_t begin{};
-        while (begin < buf_view_.length()) {
-            auto const next_newline = buf_view_.find('\n', begin);
-            if (next_newline == std::string::npos) {
-                break;
-            }
-            lines.push_back(buf_view_.substr(begin, next_newline - begin));
-            begin = next_newline + 1;
-        }
-        return lines;
-    }
-
-private:
-    std::string buf_;
-    std::string_view buf_view_;
-};
-
-constexpr std::array digits = {"one", "two", "three", "four", "five", "six", "seven", "eight", "nine"};
-
-uint32_t parse_first_digit(std::string_view const sv)
-{
-    if (std::isdigit(sv[0])) return sv[0] - '0';
-#pragma GCC unroll 10
-    for (auto i = 0U; i < digits.size(); ++i) {
-        if (sv.starts_with(digits[i])) return i + 1;
-    }
-    return 0;
-}
-
-uint32_t parse_last_digit(std::string_view const sv)
-{
-    if (std::isdigit(sv[sv.size() - 1])) return sv[sv.size() - 1] - '0';
-#pragma GCC unroll 10
-    for (auto i = 0U; i < digits.size(); ++i) {
-        if (sv.ends_with(digits[i])) return i + 1;
-    }
-    return 0;
-}
-
 int main()
 {
-    Input input{"../inputs/01.txt"};
+    std::ifstream file{"../inputs/01.txt"};
+    std::string input{std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()};
 
     auto const begin = std::chrono::high_resolution_clock::now();
 
-    auto process_part1 = [](auto const line) {
-        uint32_t first{0};
-        for (auto it = line.begin(); it < line.end(); ++it) {
-            if (std::isdigit(*it)) {
-                first = *it - '0';
-                break;
-            }
-        }
-
-        uint32_t last{0};
-        for (auto it = line.rbegin(); it < line.rend(); ++it) {
-            if (std::isdigit(*it)) {
-                last = *it - '0';
-                break;
-            }
-        }
+    auto const process_part1 = [](auto const line) {
+        constexpr auto not_digit = [] (char c) { return !std::isdigit(c); };
+        auto const first = *(line | std::views::drop_while(not_digit)).begin() - '0';
+        auto const last = *(line | std::views::reverse | std::views::drop_while(not_digit)).begin() - '0';
         return first * 10 + last;
     };
 
-    auto process_part2 = [](auto const line) {
-        uint32_t first{0};
-        auto l = line;
-        while (first == 0) {
-            first = parse_first_digit(l);
-            l = l.substr(1);
-        }
+    constexpr std::array digits = {"one", "two", "three", "four", "five", "six", "seven", "eight", "nine"};
 
-        uint32_t last{0};
-        l = line;
-        while (last == 0) {
-            last = parse_last_digit(l);
-            l = l.substr(0, l.length() - 1);
+    auto const find_first_digit = [&](auto sv) -> uint32_t {
+        while (true) {
+            if (std::isdigit(sv[0])) return sv[0] - '0';
+            #pragma GCC unroll 10
+            for (auto i{0U}; i < digits.size(); ++i) {
+                if (sv.starts_with(digits[i])) return i + 1;
+            }
+            sv = sv.substr(1);
         }
+        __builtin_unreachable();
+    };
+
+    auto const find_last_digit = [&](auto sv) -> uint32_t {
+        while (true) {
+            if (std::isdigit(sv.back())) return sv.back() - '0';
+            #pragma GCC unroll 10
+            for (auto i{0U}; i < digits.size(); ++i) {
+                if (sv.ends_with(digits[i])) return i + 1;
+            }
+            sv = sv.substr(0, sv.length() - 1);
+        }
+        __builtin_unreachable();
+    };
+
+
+    auto process_part2 = [&](auto const line) {
+        auto const first = find_first_digit(line);
+        auto const last = find_last_digit(line);
         return first * 10 + last;
     };
 
-    uint32_t p1{};
-    uint32_t p2{};
-    for (auto const line : input.splitlines()) {
-        p1 += process_part1(line);
-        p2 += process_part2(line);
-    }
+    auto line_ranges = std::views::split(input, '\n');
+
+    auto const [p1, p2] = std::ranges::fold_left(line_ranges, std::make_pair(0U, 0U), [&](auto acc, auto const& line_range) {
+        if (line_range.size() > 0) {
+            acc.first += process_part1(line_range);
+            acc.second += process_part2(std::string_view{line_range});
+        }
+        return acc;
+    });
 
     auto const end = std::chrono::high_resolution_clock::now();
 
