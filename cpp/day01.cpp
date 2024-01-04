@@ -8,6 +8,7 @@
 #include <string_view>
 #include <string>
 #include <vector>
+#include <numeric>
 
 int main()
 {
@@ -17,7 +18,9 @@ int main()
     auto const begin = std::chrono::high_resolution_clock::now();
 
     auto const process_part1 = [](auto const line) {
-        constexpr auto not_digit = [] (char c) { return !std::isdigit(c); };
+        constexpr auto not_digit = [](char c) {
+            return !std::isdigit(c);
+        };
         auto const first = *(line | std::views::drop_while(not_digit)).begin() - '0';
         auto const last = *(line | std::views::reverse | std::views::drop_while(not_digit)).begin() - '0';
         return first * 10 + last;
@@ -28,7 +31,7 @@ int main()
     auto const find_first_digit = [&](auto sv) -> uint32_t {
         while (true) {
             if (std::isdigit(sv[0])) return sv[0] - '0';
-            #pragma GCC unroll 10
+#pragma GCC unroll 10
             for (auto i{0U}; i < digits.size(); ++i) {
                 if (sv.starts_with(digits[i])) return i + 1;
             }
@@ -40,7 +43,7 @@ int main()
     auto const find_last_digit = [&](auto sv) -> uint32_t {
         while (true) {
             if (std::isdigit(sv.back())) return sv.back() - '0';
-            #pragma GCC unroll 10
+#pragma GCC unroll 10
             for (auto i{0U}; i < digits.size(); ++i) {
                 if (sv.ends_with(digits[i])) return i + 1;
             }
@@ -48,7 +51,6 @@ int main()
         }
         __builtin_unreachable();
     };
-
 
     auto process_part2 = [&](auto const line) {
         auto const first = find_first_digit(line);
@@ -58,13 +60,14 @@ int main()
 
     auto line_ranges = std::views::split(input, '\n');
 
-    auto const [p1, p2] = std::ranges::fold_left(line_ranges, std::make_pair(0U, 0U), [&](auto acc, auto const& line_range) {
-        if (line_range.size() > 0) {
-            acc.first += process_part1(line_range);
-            acc.second += process_part2(std::string_view{line_range});
-        }
-        return acc;
-    });
+    auto const [p1, p2] = std::accumulate(
+        line_ranges.begin(), line_ranges.end(), std::make_pair(0U, 0U), [&](auto acc, auto const& line_range) {
+            if (line_range.size() > 0) {
+                acc.first += process_part1(line_range);
+                acc.second += process_part2(std::string_view{line_range});
+            }
+            return acc;
+        });
 
     auto const end = std::chrono::high_resolution_clock::now();
 
